@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Link Tracker - Generate Tracking Link</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+  <div class="bg-white rounded-lg shadow-lg p-8 max-w-lg w-full">
+    <h1 class="text-2xl font-bold mb-6 text-center">Generate Tracking Link</h1>
+    <form id="linkForm" class="space-y-4">
+      <div>
+        <label for="originalUrl" class="block text-gray-700 font-semibold mb-2">Enter Original Link</label>
+        <input
+          type="url"
+          id="originalUrl"
+          name="originalUrl"
+          placeholder="https://example.com"
+          required
+          class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <button
+        type="submit"
+        class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+      >
+        <i class="fas fa-link"></i>
+        <span>Generate Link</span>
+      </button>
+    </form>
+    <div id="result" class="mt-6 text-center text-blue-700 break-words"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('linkForm');
+    const resultDiv = document.getElementById('result');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      resultDiv.textContent = 'Generating...';
+
+      const originalUrl = form.originalUrl.value.trim();
+      if (!originalUrl) {
+        resultDiv.textContent = 'Please enter a valid URL.';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/generate-link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ originalUrl }),
+        });
+        const data = await response.json();
+        if (data.trackingLink) {
+          resultDiv.innerHTML = "Tracking Link: <a href=\"" + data.trackingLink + "\" target=\"_blank\" class=\"text-blue-600 underline\">" + data.trackingLink + "</a>";
+        } else if (data.error) {
+          resultDiv.textContent = 'Error: ' + data.error;
+        } else {
+          resultDiv.textContent = 'Unknown error occurred.';
+        }
+      } catch (error) {
+        resultDiv.textContent = 'Error: ' + error.message;
+      }
+    });
+  </script>
+</body>
+</html>
