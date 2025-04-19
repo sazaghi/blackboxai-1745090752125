@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tracked Locations</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4">
+  <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6">
+    <h1 class="text-3xl font-bold mb-6 text-center">Tracked Locations</h1>
+    <table class="min-w-full border border-gray-300">
+      <thead class="bg-gray-200">
+        <tr>
+          <th class="border border-gray-300 px-4 py-2 text-left">#</th>
+          <th class="border border-gray-300 px-4 py-2 text-left">Latitude</th>
+          <th class="border border-gray-300 px-4 py-2 text-left">Longitude</th>
+          <th class="border border-gray-300 px-4 py-2 text-left">Timestamp</th>
+          <th class="border border-gray-300 px-4 py-2 text-left">Map</th>
+        </tr>
+      </thead>
+      <tbody id="locationsBody">
+        <tr><td colspan="5" class="text-center p-4">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const locationsBody = document.getElementById('locationsBody');
+
+    function formatTimestamp(ts) {
+      const date = new Date(ts);
+      return date.toLocaleString();
+    }
+
+    function createMapLink(lat, lon) {
+      return "https://www.google.com/maps?q=" + lat + "," + lon;
+    }
+
+    async function loadLocations() {
+      try {
+        const response = await fetch('/api/locations');
+        const locations = await response.json();
+        if (locations.length === 0) {
+          locationsBody.innerHTML = '<tr><td colspan="5" class="text-center p-4">No locations tracked yet.</td></tr>';
+          return;
+        }
+        locationsBody.innerHTML = '';
+        locations.forEach((loc, index) => {
+          const row = document.createElement('tr');
+          row.classList.add(index % 2 === 0 ? 'bg-white' : 'bg-gray-50');
+          row.innerHTML = 
+            '<td class="border border-gray-300 px-4 py-2">' + (index + 1) + '</td>' +
+            '<td class="border border-gray-300 px-4 py-2">' + loc.latitude.toFixed(6) + '</td>' +
+            '<td class="border border-gray-300 px-4 py-2">' + loc.longitude.toFixed(6) + '</td>' +
+            '<td class="border border-gray-300 px-4 py-2">' + formatTimestamp(loc.timestamp) + '</td>' +
+            '<td class="border border-gray-300 px-4 py-2">' +
+              '<a href="' + createMapLink(loc.latitude, loc.longitude) + '" target="_blank" class="text-blue-600 underline">View Map</a>' +
+            '</td>';
+          locationsBody.appendChild(row);
+        });
+      } catch (error) {
+        locationsBody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-red-600">Failed to load locations.</td></tr>';
+      }
+    }
+
+    loadLocations();
+  </script>
+</body>
+</html>
